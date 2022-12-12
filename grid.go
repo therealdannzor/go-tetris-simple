@@ -280,8 +280,29 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 		h_max := maxHeight(h1, h2)
 		h_max = maxHeight(h_max, h3)
 
+		// nothing below us, just drop it!
+		if h_max == 0 {
+			g.fields[1].mark(pos)
+			g.fields[1].mark(pos + 1)
+			g.fields[1].mark(pos + 2)
+			g.fields[0].mark(pos + 2)
+
+			// T: height 2
+			newMax := h_max + 2
+			g.positionHeight[pos] = newMax
+			g.positionHeight[pos+1] = newMax
+			g.positionHeight[pos+2] = newMax
+
+			// potentially update the current max height of the whole grid
+			g.currentMaxHeight = maxHeight(newMax, g.currentMaxHeight)
+
+			g.checkRowsToClear()
+			return nil
+		}
+
 		// the leftmost tile of the S-shape will 'attach'
 		if h_max == h1 {
+			fmt.Println("T shape, h_max: ", h_max)
 			if g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) && g.fields[h_max-1].isFree(pos-1) && g.fields[h_max].isFree(pos+2) {
 				g.fields[h_max].mark(pos)
 				g.fields[h_max].mark(pos + 1)
