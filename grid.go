@@ -1,6 +1,10 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"strconv"
+)
 
 // height is 0..100
 type height int
@@ -13,13 +17,32 @@ type Grid struct {
 	currentMaxHeight height
 }
 
-type Shape struct {
-	shortcode string // the uppercase letter representing the shape
-	rows      int    // height taken up by the shape (e.g., I = 1, L = 4)
+func NewGrid() Grid {
+	var fields [HEIGHT_LIMIT]Row
+	positionHeight := make(map[x_position]height)
+
+	return Grid{
+		fields:           fields,
+		positionHeight:   positionHeight,
+		currentMaxHeight: 0,
+	}
+}
+
+func (g *Grid) ReadShapes(lines []string) int {
+	for _, s := range lines {
+		s1 := string(s[0:1])
+		// under the assumption all input is clean
+		s2, err := strconv.Atoi(string(s[1:2]))
+		if err != nil {
+			fmt.Println(err)
+		}
+		g.newShape(s1, x_position(s2))
+	}
+	return int(g.currentMaxHeight)
 }
 
 func (g *Grid) shiftRows(fromIndex int, toIndex int) {
-	for i := toIndex + 1; i < fromIndex + 2; i++ {
+	for i := toIndex + 1; i < fromIndex+2; i++ {
 		g.fields[i-1] = g.fields[i]
 	}
 }
@@ -35,11 +58,11 @@ func (g *Grid) checkRowsToClear() {
 }
 
 // Accepts a Shape and a position (0..9)
-func (g *Grid) newShape(shape Shape, pos x_position) error {
+func (g *Grid) newShape(shortcode string, pos x_position) error {
 	errBound := errors.New("invalid position, outside bound")
 	errExisting := errors.New("existing shape overlap, cannot insert")
 
-	switch shape.shortcode {
+	switch shortcode {
 	case "Q":
 		// Legend: S = existing, Q = new, pos = x, height = y
 		// .  .  .  .  .
