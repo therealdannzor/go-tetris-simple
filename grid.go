@@ -18,12 +18,20 @@ type Shape struct {
 	rows      int    // height taken up by the shape (e.g., I = 1, L = 4)
 }
 
-func (g *Grid) checkRowsToClear(index int) error {
-	if g.fields[index].counter != 10 {
-		return errors.New("row is not complete yet")
+func (g *Grid) shiftRows(fromIndex int, toIndex int) {
+	for i := toIndex + 1; i < fromIndex + 2; i++ {
+		g.fields[i-1] = g.fields[i]
 	}
+}
 
-	return nil
+func (g *Grid) checkRowsToClear() {
+	max := int(g.currentMaxHeight)
+	for i := 0; i < max; i++ {
+		if g.fields[i].isFull() {
+			g.fields[i].clean()
+			g.shiftRows(max, i)
+		}
+	}
 }
 
 // Accepts a Shape and a position (0..9)
@@ -57,6 +65,7 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 
 		// potentially update the current max height of the whole grid
 		g.currentMaxHeight = maxHeight(height(int(h_max)+2), g.currentMaxHeight)
+		g.checkRowsToClear()
 		return nil
 
 		//TODO: check if bottom row disappears
@@ -88,7 +97,7 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 			g.fields[1].mark(pos + 1)
 			g.fields[0].mark(pos + 1)
 			g.fields[0].mark(pos + 2)
-			return nil
+
 		}
 
 		// the leftmost tile of the Z-shape will 'attach'
@@ -125,6 +134,7 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 		// potentially update the current max height of the whole grid
 		//
 		g.currentMaxHeight = maxHeight(height(int(h_max)+2), g.currentMaxHeight)
+		g.checkRowsToClear()
 		return nil
 
 	case "S":
@@ -174,10 +184,6 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 			g.positionHeight[pos] = 1
 			g.positionHeight[pos+1] = 2
 			g.positionHeight[pos+2] = 2
-
-			// potentially update the current max height of the whole grid
-			g.currentMaxHeight = maxHeight(height(int(h_max)+2), g.currentMaxHeight)
-			return nil
 		}
 
 		// CASE 1
@@ -226,6 +232,9 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 				g.positionHeight[pos+2] = h_max + 1
 				g.positionHeight[pos+1] = h_max + 1
 				g.positionHeight[pos] = h_max
+				newMax := h_max + 1
+				g.currentMaxHeight = maxHeight(newMax, g.currentMaxHeight)
+				return nil
 
 			} else {
 				return errExisting
@@ -234,6 +243,7 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 
 		// potentially update the current max height of the whole grid
 		g.currentMaxHeight = maxHeight(height(int(h_max)+2), g.currentMaxHeight)
+		g.checkRowsToClear()
 		return nil
 
 	case "T":
@@ -305,8 +315,7 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 			}
 		}
 
-		// potentially update the current max height of the whole grid
-		g.currentMaxHeight = maxHeight(height(int(h_max)+2), g.currentMaxHeight)
+		g.checkRowsToClear()
 		return nil
 
 	case "I":
@@ -334,6 +343,7 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 		g.positionHeight[pos+3] = newMax
 		// potentially update the current max height of the whole grid
 		g.currentMaxHeight = maxHeight(newMax, g.currentMaxHeight)
+		g.checkRowsToClear()
 		return nil
 
 	case "L":
@@ -356,6 +366,7 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 
 		// potentially update the current max height of the whole grid
 		g.currentMaxHeight = maxHeight(newMax, g.currentMaxHeight)
+		g.checkRowsToClear()
 		return nil
 
 	case "J":
@@ -378,6 +389,7 @@ func (g *Grid) newShape(shape Shape, pos x_position) error {
 
 		// potentially update the current max height of the whole grid
 		g.currentMaxHeight = maxHeight(newMax, g.currentMaxHeight)
+		g.checkRowsToClear()
 		return nil
 
 	}

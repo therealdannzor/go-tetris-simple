@@ -8,9 +8,9 @@ type Row struct {
 }
 
 // position is 0..9
-type position int
+type x_position int
 
-func (r Row) mark(i position) {
+func (r *Row) mark(i x_position) {
 	if r.fields[i] == false {
 		r.fields[i] = true
 		r.counter++
@@ -22,12 +22,17 @@ func (r Row) mark(i position) {
 	}
 }
 
-func (r Row) clean() {
+// Cleans a row entirely
+func (r *Row) clean() {
 	var l [10]bool
 	r.fields = l
 	r.counter = 0
 }
 
-func (r Row) isFree(i position) bool {
+func (r *Row) isFull() bool {
+	return r.counter == 10
+}
+
+func (r Row) isFree(i x_position) bool {
 	return !r.fields[i]
 }
