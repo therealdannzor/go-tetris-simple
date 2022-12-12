@@ -41,9 +41,9 @@ func (g *Grid) ReadShapes(lines []string) int {
 	return int(g.currentMaxHeight)
 }
 
-func (g *Grid) shiftRows(fromIndex int, toIndex int) {
-	for i := toIndex + 1; i < fromIndex+2; i++ {
-		g.fields[i-1] = g.fields[i]
+func (g *Grid) shiftRows(erasedIndex int, toIndex int) {
+	for i := erasedIndex; i < toIndex+1; i++ {
+		g.fields[i] = g.fields[i+1]
 	}
 }
 
@@ -52,12 +52,20 @@ func (g *Grid) checkRowsToClear() {
 	for i := 0; i < max; i++ {
 		if g.fields[i].isFull() {
 			g.fields[i].clean()
-			g.shiftRows(max, i)
+			g.currentMaxHeight--
+			g.decrementPosHeights()
+			g.shiftRows(i, max)
 		}
 	}
 }
 
-// Accepts a Shape and a position (0..9)
+func (g *Grid) decrementPosHeights() {
+	for i := 0; i < 10; i++ {
+		g.positionHeight[x_position(i)]--
+	}
+}
+
+// Accepts an uppercase letter (representing a shape) and an x-coordinate on the grid
 func (g *Grid) newShape(shortcode string, pos x_position) error {
 	errBound := errors.New("invalid position, outside bound")
 	errExisting := errors.New("existing shape overlap, cannot insert")
@@ -83,11 +91,12 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 		g.fields[h_max+1].mark(pos + 1)
 
 		// Q: height 2
-		g.positionHeight[pos] = h_max + 2
-		g.positionHeight[pos+1] = h_max + 2
+		newMax := h_max + 2
+		g.positionHeight[pos] = newMax
+		g.positionHeight[pos+1] = newMax
 
 		// potentially update the current max height of the whole grid
-		g.currentMaxHeight = maxHeight(height(int(h_max)+2), g.currentMaxHeight)
+		g.currentMaxHeight = maxHeight(newMax, g.currentMaxHeight)
 		g.checkRowsToClear()
 		return nil
 
@@ -302,7 +311,6 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 
 		// the leftmost tile of the S-shape will 'attach'
 		if h_max == h1 {
-			fmt.Println("T shape, h_max: ", h_max)
 			if g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) && g.fields[h_max-1].isFree(pos-1) && g.fields[h_max].isFree(pos+2) {
 				g.fields[h_max].mark(pos)
 				g.fields[h_max].mark(pos + 1)

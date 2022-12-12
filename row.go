@@ -14,9 +14,6 @@ func (r *Row) mark(i x_position) {
 	if r.fields[i] == false {
 		r.fields[i] = true
 		r.counter++
-		if r.counter == 10 {
-			r.clean()
-		}
 	} else {
 		fmt.Println("unexpected error: cannot mark same point twice")
 	}
