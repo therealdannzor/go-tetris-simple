@@ -24,16 +24,23 @@ func (g *Grid) newShape(shape Shape, pos position) error {
 
 	switch shape.shortcode {
 	case "Q":
-		if pos > 8 {
+		// Legend: S = existing, Q = new, pos = x, height = y
+		// .  .  .  .  .
+		// .  .  .  .  .
+		// Q  Q  .  .  .
+		// Q  Q  S  S  .
+		// .  S  S  .  .
+
+		if pos > 8 || pos < 0 {
 			return errBound
 		}
 		h1 := g.positionHeight[pos]
-		h2 := g.positionHeight[pos+1]   // Legend: S = existing, Q = new, pos = x, height = y
-		h_max := maxHeight(h1, h2)      // .  .  .  .  .
-		g.fields[h_max].mark(pos)       // .  .  .  .  .
-		g.fields[h_max+1].mark(pos)     // Q  Q  .  .  .
-		g.fields[h_max].mark(pos + 1)   // Q  Q  S  S  .
-		g.fields[h_max+1].mark(pos + 1) // .  S  S  .  .
+		h2 := g.positionHeight[pos+1]
+		h_max := maxHeight(h1, h2)
+		g.fields[h_max].mark(pos)
+		g.fields[h_max+1].mark(pos)
+		g.fields[h_max].mark(pos + 1)
+		g.fields[h_max+1].mark(pos + 1)
 
 		// the Q shape has height 2
 		g.positionHeight[pos] = h_max + 2
@@ -41,11 +48,18 @@ func (g *Grid) newShape(shape Shape, pos position) error {
 
 		//TODO: check if bottom row disappears
 	case "Z":
-		if pos >= 8 {
+		// Legend: I = existing, Z = new, pos = x, height = y
+		// .  .  .  .  .
+		// .  .  .  .  .
+		// Z  Z  .  .  .
+		// .  Z  Z  .  .
+		// I  I  I  I  .
+
+		if pos >= 8 || pos < 0 {
 			return errBound
 		}
 		h1 := g.positionHeight[pos]
-		h2 := g.positionHeight[pos+1] // Legend: T = existing, Z = new
+		h2 := g.positionHeight[pos+1]
 		h3 := g.positionHeight[pos+2]
 		h_max := maxHeight(h1, h2)
 		h_max = maxHeight(h_max, h3)
@@ -56,49 +70,207 @@ func (g *Grid) newShape(shape Shape, pos position) error {
 			g.fields[1].mark(pos + 1)
 			g.fields[0].mark(pos + 1)
 			g.fields[0].mark(pos + 2)
+			return nil
 		}
 
 		// the leftmost tile of the Z-shape will 'attach'
 		if h_max == h1 {
-			if !g.fields[h_max].isFree(pos) && !g.fields[h_max].isFree(pos+1) && !g.fields[h_max-1].isFree(pos+1) && !g.fields[h_max-1].isFree(pos+2) {
+			if g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) && g.fields[h_max-1].isFree(pos+1) && g.fields[h_max-1].isFree(pos+2) {
 				g.fields[h_max].mark(pos)
 				g.fields[h_max].mark(pos + 1)
 				g.fields[h_max-1].mark(pos - 1)
 				g.fields[h_max-1].mark(pos + 2)
+				return nil
 			} else {
 				return errExisting
 			}
 			// the middle two tiles of the Z-shape will 'attach'
 		} else if h_max == h2 {
-			if !g.fields[h_max+1].isFree(pos-1) && !g.fields[h_max+1].isFree(pos) && !g.fields[h_max].isFree(pos) && !g.fields[h_max].isFree(pos+1) {
+			if g.fields[h_max+1].isFree(pos-1) && g.fields[h_max+1].isFree(pos) && g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) {
 				g.fields[h_max+1].mark(pos - 1)
 				g.fields[h_max+1].mark(pos)
 				g.fields[h_max].mark(pos)
 				g.fields[h_max].mark(pos + 1)
+				return nil
 			} else {
 				return errExisting
 			}
+			// the rightmost tile
 		} else if h_max == h3 {
-			if !g.fields[h_max+1].isFree(pos) && !g.fields[h_max+1].isFree(pos+1) && !g.fields[h_max].isFree(pos+1) && !g.fields[h_max].isFree(pos+2) {
+			if g.fields[h_max+1].isFree(pos) && g.fields[h_max+1].isFree(pos+1) && g.fields[h_max].isFree(pos+1) && g.fields[h_max].isFree(pos+2) {
 				g.fields[h_max+1].mark(pos)
 				g.fields[h_max+1].mark(pos + 1)
 				g.fields[h_max].mark(pos + 1)
 				g.fields[h_max].mark(pos + 2)
+				return nil
 			} else {
 				return errExisting
 			}
 		}
 
 	case "S":
-		// mark two rows
+
+		// CASE 1
+		// Legend: L = existing, S = new, pos = x, height = y
+		// .  S  S  .  .
+		// S  S  .  .  .
+		// L  .  .  .  .
+		// L  .  .  .  .
+		// L  L  .  .  .
+
+		// CASE 2
+		// Legend: T = existing, S = new, pos = x, height = y
+		// .  .  .  .  .
+		// .  .  S  S  .
+		// .  S  S  .  .
+		// .  .  T  T  T
+		// .  .  .  T  .
+
+		// CASE 3
+		// Legend: L = existing, S = new, pos = x, height = y
+		// .  .  .  .  .
+		// .  .  S  S  .
+		// .  S  S  L  .
+		// .  .  .  L  .
+		// .  .  .  L  L
+
+		if pos >= 8 || pos < 0 {
+			return errBound
+		}
+
+		h1 := g.positionHeight[pos]
+		h2 := g.positionHeight[pos+1]
+		h3 := g.positionHeight[pos+2]
+		h_max := maxHeight(h1, h2)
+		h_max = maxHeight(h_max, h3)
+
+		// nothing below us, just drop it!
+		if h_max == 0 {
+			g.fields[0].mark(pos)
+			g.fields[0].mark(pos + 1)
+			g.fields[1].mark(pos + 1)
+			g.fields[1].mark(pos + 2)
+			return nil
+		}
+
+		// CASE 1
+		// the leftmost tile of the S-shape touches an existing shape
+		if h_max == h1 {
+			if g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) && g.fields[h_max-1].isFree(pos+1) && g.fields[h_max-1].isFree(pos+2) {
+				g.fields[h_max].mark(pos)
+				g.fields[h_max].mark(pos + 1)
+				g.fields[h_max-1].mark(pos - 1)
+				g.fields[h_max-1].mark(pos + 2)
+				return nil
+			} else {
+				return errExisting
+			}
+			// CASE 2
+			// the middle two tiles of the S-shape touches an existing shape
+		} else if h_max == h2 {
+			if g.fields[h_max+1].isFree(pos-1) && g.fields[h_max+1].isFree(pos) && g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) {
+				g.fields[h_max+1].mark(pos - 1)
+				g.fields[h_max+1].mark(pos)
+				g.fields[h_max].mark(pos)
+				g.fields[h_max].mark(pos + 1)
+				return nil
+			} else {
+				return errExisting
+			}
+			// CASE 3
+			// the rightmost tile of the S-shape touches an existing shape
+		} else if h_max == h3 {
+			if g.fields[h_max-1].isFree(pos-2) && g.fields[h_max-1].isFree(pos-1) && g.fields[h_max].isFree(pos-1) && g.fields[h_max].isFree(pos) {
+				g.fields[h_max-1].mark(pos - 2)
+				g.fields[h_max-1].mark(pos - 1)
+				g.fields[h_max].mark(pos - 1)
+				g.fields[h_max].mark(pos)
+				return nil
+			} else {
+				return errExisting
+			}
+		}
+
 	case "T":
-		// mark two rows
+		if pos >= 8 || pos < 0 {
+			return errBound
+		}
+
+		h1 := g.positionHeight[pos]
+		h2 := g.positionHeight[pos+1]
+		h3 := g.positionHeight[pos+2]
+		h_max := maxHeight(h1, h2)
+		h_max = maxHeight(h_max, h3)
+
+		// the leftmost tile of the S-shape will 'attach'
+		if h_max == h1 {
+			if g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) && g.fields[h_max-1].isFree(pos-1) && g.fields[h_max].isFree(pos+2) {
+				g.fields[h_max].mark(pos)
+				g.fields[h_max].mark(pos + 1)
+				g.fields[h_max-1].mark(pos - 1)
+				g.fields[h_max].mark(pos + 2)
+				return nil
+			} else {
+				return errExisting
+			}
+			// the middle two tiles of the S-shape will 'attach'
+		} else if h_max == h2 {
+			if g.fields[h_max].isFree(pos+1) && g.fields[h_max+1].isFree(pos+1) && g.fields[h_max+1].isFree(pos) && g.fields[h_max+1].isFree(pos+2) {
+				g.fields[h_max].mark(pos + 1)
+				g.fields[h_max+1].mark(pos + 1)
+				g.fields[h_max+1].mark(pos)
+				g.fields[h_max+1].mark(pos + 2)
+				return nil
+			} else {
+				return errExisting
+			}
+		}
+
 	case "I":
-		// mark one row
+		if pos >= 7 || pos < 0 {
+			return errBound
+		}
+
+		h1 := g.positionHeight[pos]
+		h2 := g.positionHeight[pos+1]
+		h3 := g.positionHeight[pos+2]
+		h4 := g.positionHeight[pos+3]
+		h_max := maxHeight(h1, h2)
+		h_max = maxHeight(h_max, h3)
+		h_max = maxHeight(h_max, h4)
+		g.fields[h_max].mark(pos)
+		g.fields[h_max].mark(pos + 1)
+		g.fields[h_max].mark(pos + 2)
+		g.fields[h_max].mark(pos + 3)
+		return nil
+
 	case "L":
-		// mark four rows
+		if pos >= 9 || pos < 0 {
+			return errBound
+		}
+
+		h1 := g.positionHeight[pos]
+		h2 := g.positionHeight[pos+1]
+		h_max := maxHeight(h1, h2)
+		g.fields[h_max+2].mark(pos)
+		g.fields[h_max+1].mark(pos)
+		g.fields[h_max].mark(pos)
+		g.fields[h_max].mark(pos + 1)
+		return nil
+
 	case "J":
-		// mark four rows
+		if pos >= 9 || pos < 0 {
+			return errBound
+		}
+
+		h1 := g.positionHeight[pos]
+		h2 := g.positionHeight[pos+1]
+		h_max := maxHeight(h1, h2)
+		g.fields[h_max].mark(pos)
+		g.fields[h_max].mark(pos + 1)
+		g.fields[h_max+1].mark(pos + 1)
+		g.fields[h_max+2].mark(pos + 1)
+		return nil
 
 	}
 
