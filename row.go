@@ -15,7 +15,7 @@ func (r *Row) mark(i x_position) {
 		r.fields[i] = true
 		r.counter++
 	} else {
-		fmt.Println("unexpected error: cannot mark same point twice")
+		fmt.Println("unexpected logic error: should not mark same point twice")
 	}
 }
 
