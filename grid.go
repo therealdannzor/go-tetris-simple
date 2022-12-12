@@ -55,6 +55,7 @@ func (g *Grid) checkRowsToClear() {
 			g.currentMaxHeight--
 			g.decrementPosHeights()
 			g.shiftRows(i, max)
+			g.checkRowsToClear() // recursive call in case of being able to clear another row (c.f. test case with only Qs)
 		}
 	}
 }
