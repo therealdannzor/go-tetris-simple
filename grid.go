@@ -182,11 +182,6 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 				return errExisting
 			}
 		}
-		// potentially update the current max height of the whole grid
-		//
-		g.currentMaxHeight = maxHeight(height(int(h_max)+2), g.currentMaxHeight)
-		g.checkRowsToClear()
-		return nil
 
 	case "S":
 
@@ -266,11 +261,11 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 			// CASE 2
 			// the middle two tiles of the S-shape touches an existing shape
 		} else if h_max == h2 {
-			if g.fields[h_max+1].isFree(pos-1) && g.fields[h_max+1].isFree(pos) && g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) {
-				g.fields[h_max+1].mark(pos - 1)
-				g.fields[h_max+1].mark(pos)
+			if g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) && g.fields[h_max+1].isFree(pos+1) && g.fields[h_max+1].isFree(pos+2) {
 				g.fields[h_max].mark(pos)
-				g.fields[h_max].mark(pos + 1)
+				g.fields[h_max].mark(pos+1)
+				g.fields[h_max+1].mark(pos+1)
+				g.fields[h_max+1].mark(pos+2)
 
 				// S: height 2
 				g.positionHeight[pos+1] = h_max + 2
@@ -288,11 +283,11 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 			// CASE 3
 			// the rightmost tile of the S-shape touches an existing shape
 		} else if h_max == h3 {
-			if g.fields[h_max-1].isFree(pos-2) && g.fields[h_max-1].isFree(pos-1) && g.fields[h_max].isFree(pos-1) && g.fields[h_max].isFree(pos) {
-				g.fields[h_max-1].mark(pos - 2)
-				g.fields[h_max-1].mark(pos - 1)
-				g.fields[h_max].mark(pos - 1)
-				g.fields[h_max].mark(pos)
+			if g.fields[h_max-1].isFree(pos) && g.fields[h_max-1].isFree(pos+1) && g.fields[h_max].isFree(pos+1) && g.fields[h_max].isFree(pos+2) {
+				g.fields[h_max-1].mark(pos)
+				g.fields[h_max-1].mark(pos + 1)
+				g.fields[h_max].mark(pos + 1)
+				g.fields[h_max].mark(pos + 2)
 
 				// S: height 2
 				g.positionHeight[pos+2] = h_max + 1
@@ -301,6 +296,7 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 
 				newMax := h_max + 1
 				g.currentMaxHeight = maxHeight(newMax, g.currentMaxHeight)
+				g.checkRowsToClear()
 				return nil
 
 			} else {
@@ -383,7 +379,7 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 				g.fields[h_max-1].mark(pos + 1)
 				g.fields[h_max].mark(pos + 2)
 
-				// T: height 2
+				// T: height 1
 				newMax := h_max + 1
 				g.positionHeight[pos+1] = newMax
 				g.positionHeight[pos] = newMax
