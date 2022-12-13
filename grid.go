@@ -263,9 +263,9 @@ func (g *Grid) newShape(shortcode string, pos x_position) error {
 		} else if h_max == h2 {
 			if g.fields[h_max].isFree(pos) && g.fields[h_max].isFree(pos+1) && g.fields[h_max+1].isFree(pos+1) && g.fields[h_max+1].isFree(pos+2) {
 				g.fields[h_max].mark(pos)
-				g.fields[h_max].mark(pos+1)
-				g.fields[h_max+1].mark(pos+1)
-				g.fields[h_max+1].mark(pos+2)
+				g.fields[h_max].mark(pos + 1)
+				g.fields[h_max+1].mark(pos + 1)
+				g.fields[h_max+1].mark(pos + 2)
 
 				// S: height 2
 				g.positionHeight[pos+1] = h_max + 2
